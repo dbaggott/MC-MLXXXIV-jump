@@ -1,5 +1,6 @@
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'me.modmuss50.mod-publish-plugin' version '2.1.1'
 }
 
 version = project.mod_version
@@ -96,7 +97,43 @@ jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName
 
+	// Each jar is built for one Minecraft line (fabric.mod.json pins `~${minecraft_version}`), so
+	// the file name says which. Only the file name: fabric.mod.json's `version` is `project.version`,
+	// the plain mod_version.
+	archiveVersion = "${project.mod_version}+${project.minecraft_version}"
+
 	from("LICENSE") {
 		rename { "${it}_$projectName" }
+	}
+}
+
+// Releases go to GitHub Releases only. .github/workflows/release.yml runs `publishMods` once a
+// mod_version bump reaches main; README.md's "Releasing" section is the procedure.
+def changelogPath = "changelogs/${project.mod_version}.md"
+def changelogFile = layout.projectDirectory.file(changelogPath)
+
+publishMods {
+	// With current Loom, `jar` produces the remapped jar; there is no `remapJar` task.
+	file = tasks.jar.archiveFile
+	// Read lazily, and thrown here rather than left to the plugin, whose own error for a missing
+	// changelog doesn't name the file.
+	changelog = provider {
+		if (!changelogFile.asFile.exists()) {
+			throw new GradleException(
+				"Changelog file ${changelogPath} not found. Create it before releasing v${project.mod_version}."
+			)
+		}
+		changelogFile.asFile.text
+	}
+	// Any other type publishes a pre-release, which /releases/latest skips.
+	type = STABLE
+	modLoaders.add("fabric")
+	displayName = "MCMLXXXIV Jump ${project.mod_version}"
+
+	github {
+		repository = "dbaggott/MC-MLXXXIV-jump"
+		tagName = "v${project.mod_version}"
+		commitish = providers.environmentVariable("GITHUB_SHA").orElse("main")
+		accessToken = providers.environmentVariable("GITHUB_TOKEN")
 	}
 }

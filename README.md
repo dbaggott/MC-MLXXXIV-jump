@@ -21,6 +21,19 @@ The mod needs [Fabric API](https://modrinth.com/mod/fabric-api) and [Cloth Confi
 
 **How jitter is applied.** With jitter at *p* %, each jump uses a distance picked uniformly between (1 − *p*/100) and (1 + *p*/100) times the setting: at 10 %, a 0.20 setting jumps somewhere between 0.18 and 0.22. A new distance is picked each time you land, and when you change the settings, so it holds steady while you walk up to a ledge.
 
+## Installing
+
+1. Download the jar from the [latest release](https://github.com/dbaggott/MC-MLXXXIV-jump/releases/latest).
+2. Put it in `.minecraft/mods`, along with [Fabric API](https://modrinth.com/mod/fabric-api) and [Cloth Config](https://modrinth.com/mod/cloth-config).
+
+The mod is client-only: it never goes on a server.
+
+To check that a jar was built from this repository by its release workflow:
+
+```sh
+gh attestation verify <downloaded jar> --repo dbaggott/MC-MLXXXIV-jump
+```
+
 ## Building
 
 Requires Java 25 (`mise install` picks it up from `mise.toml`).
@@ -39,3 +52,13 @@ jump_run_dir=/Users/you/mcmlxxxiv-jump-run
 ```
 
 Leaving it unset or blank keeps `run/`.
+
+## Releasing
+
+Merging a version bump to `main` releases it:
+
+1. Write the release notes in `changelogs/<version>.md` (see [`changelogs/README.md`](changelogs/README.md)).
+2. Bump `mod_version` in `gradle.properties` in the same PR.
+3. Merge. The `release` workflow builds the jar and publishes GitHub Release `v<version>` with it.
+
+If a release fails, fix the cause on `main` and retry from the Actions tab: **release** → **Run workflow** on `main`.
