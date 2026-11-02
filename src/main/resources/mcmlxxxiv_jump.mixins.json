@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "io.dnbg.minecraft.jump.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "LocalPlayerMixin",
+    "PlayerInvoker"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
