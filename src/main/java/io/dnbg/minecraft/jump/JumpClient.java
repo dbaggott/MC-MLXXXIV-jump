@@ -29,7 +29,7 @@ public class JumpClient implements ClientModInitializer {
 
 		KeyMapping toggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 				"key." + MOD_ID + ".toggle_edge_jump",
-				InputConstants.Type.KEYSYM,
+				InputConstants.Type.KEYBOARD,
 				InputConstants.UNKNOWN.getValue(),
 				KeyMapping.Category.MOVEMENT));
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {

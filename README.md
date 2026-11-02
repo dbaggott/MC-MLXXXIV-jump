@@ -40,7 +40,7 @@ Requires Java 25 (`mise install` picks it up from `mise.toml`).
 
 ```sh
 ./gradlew build      # compiles, runs the unit tests, and writes the jar to build/libs/
-./gradlew runClient  # launches a Minecraft 26.2 dev client with the mod loaded
+./gradlew runClient  # launches a Minecraft dev client with the mod loaded
 ```
 
 ### `jump_run_dir`
@@ -60,5 +60,7 @@ Merging a version bump to `main` releases it:
 1. Write the release notes in `changelogs/<version>.md` (see [`changelogs/README.md`](changelogs/README.md)).
 2. Bump `mod_version` in `gradle.properties` in the same PR.
 3. Merge. The `release` workflow builds the jar and publishes GitHub Release `v<version>` with it.
+
+A port to a new Minecraft line is a version bump too: releases are keyed on `mod_version`, so a PR that changes only `minecraft_version` publishes nothing. Alongside the steps above, the port PR bumps the toolchain versions in `gradle.properties` and fixes whatever the new line broke in the code. `fabric.mod.json`'s dependency ranges are filled from `gradle.properties` at build time, so they need no edit.
 
 If a release fails, fix the cause on `main` and retry from the Actions tab: **release** → **Run workflow** on `main`.

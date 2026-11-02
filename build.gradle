@@ -65,13 +65,15 @@ dependencies {
 }
 
 processResources {
-	def version = project.version
-	inputs.property "version", version
+	// fabric.mod.json's version and dependency ranges come from gradle.properties, so a port to a
+	// new Minecraft line edits versions in one place. Each dependency's floor is the version the
+	// jar was built against.
+	def props = ["minecraft_version", "loader_version", "fabric_api_version", "cloth_config_version", "modmenu_version"]
+		.collectEntries { [it, project.property(it)] } + [version: project.version]
+	inputs.properties props
 
-	// Expands ${version} inside fabric.mod.json so the mod metadata's version field
-	// doesn't have to be kept in sync with gradle.properties by hand.
 	filesMatching("fabric.mod.json") {
-		expand "version": version
+		expand props
 	}
 }
 
