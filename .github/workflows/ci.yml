@@ -19,8 +19,8 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)
-          test -f "changelogs/$VERSION.md" || {
-            echo "::error file=gradle.properties::changelogs/$VERSION.md is missing: add release notes for mod_version=$VERSION (see changelogs/README.md)"
+          test -s "changelogs/$VERSION.md" || {
+            echo "::error file=gradle.properties::changelogs/$VERSION.md is missing or empty: add release notes for mod_version=$VERSION (see changelogs/README.md)"
             exit 1
           }
 

@@ -93,10 +93,13 @@ jobs:
         name: Locate the mod jar
         run: |
           set -euo pipefail
-          MC=$(grep '^minecraft_version=' gradle.properties | cut -d= -f2)
-          JAR="build/libs/mcmlxxxiv-jump-$VERSION+$MC.jar"
-          test -f "$JAR" || { echo "::error::$JAR was not built"; exit 1; }
-          echo "path=$JAR" >> "$GITHUB_OUTPUT"
+          # build.gradle owns the file name; the only other jar the build writes is -sources.
+          mapfile -t JARS < <(find build/libs -maxdepth 1 -name '*.jar' ! -name '*-sources.jar')
+          if [ "${#JARS[@]}" -ne 1 ]; then
+            echo "::error::expected one mod jar in build/libs, found ${#JARS[@]}: ${JARS[*]}"
+            exit 1
+          fi
+          echo "path=${JARS[0]}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/attest-build-provenance@v4
         with:

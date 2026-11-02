@@ -97,8 +97,8 @@ jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName
 
-	// Each jar is built for one Minecraft line (fabric.mod.json pins `~${minecraft_version}`), so
-	// the file name says which. Only the file name: fabric.mod.json's `version` is `project.version`,
+	// Each jar is built for one Minecraft line (fabric.mod.json's `minecraft` dependency pins it),
+	// so the file name says which. Only the file name: fabric.mod.json's `version` is `project.version`,
 	// the plain mod_version.
 	archiveVersion = "${project.mod_version}+${project.minecraft_version}"
 
