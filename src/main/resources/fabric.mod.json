@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "mcmlxxxiv_jump",
+  "version": "${version}",
+  "name": "MCMLXXXIV Jump",
+  "description": "Go ahead and jump!  Minecraft Fabric mod adding configurable auto-jumping capabilities.",
+  "authors": [
+    "dbaggott"
+  ],
+  "contact": {
+    "sources": "https://github.com/dbaggott/MC-MLXXXIV-jump"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "io.dnbg.minecraft.jump.JumpClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": ">=0.156.0"
+  }
+}

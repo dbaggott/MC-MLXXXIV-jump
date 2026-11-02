@@ -1,0 +1,80 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+repositories {
+	// Loom adds Mojang + Fabric repos automatically; mavenCentral() is for JUnit.
+	mavenCentral()
+}
+
+// No splitEnvironmentSourceSets(): the mod is client-only ("environment": "client" in
+// fabric.mod.json), so there is no common code to keep apart and everything lives in src/main.
+
+loom {
+	// Where the dev client keeps its world, options and mods.
+	//
+	// Defaults to `run/` inside the project directory, which means a
+	// worktree gets its own empty world and its own keybinds — fine for a throwaway test, useless
+	// for playing the mod. Setting `jump_run_dir` to an absolute path in
+	// ~/.gradle/gradle.properties points every worktree on that machine at one shared directory.
+	//
+	// A user-level property rather than a committed value on purpose: the path is per-machine, and
+	// a clone that sets nothing still gets the ordinary `run/`.
+	runs.configureEach {
+		String shared = providers.gradleProperty("jump_run_dir").getOrNull()
+		// Blank counts as unset: a property line left empty in gradle.properties should fall back
+		// to the default rather than resolve the run directory to nothing.
+		if (shared != null && !shared.isBlank()) {
+			runDir = shared
+		}
+	}
+}
+
+dependencies {
+	// Versions live in gradle.properties so they're easy to bump in one place.
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	testImplementation platform("org.junit:junit-bom:${project.junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	// Gradle 9 no longer puts the JUnit Platform launcher on the test runtime implicitly.
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	// Expands ${version} inside fabric.mod.json so the mod metadata's version field
+	// doesn't have to be kept in sync with gradle.properties by hand.
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+test {
+	useJUnitPlatform()
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName" }
+	}
+}
