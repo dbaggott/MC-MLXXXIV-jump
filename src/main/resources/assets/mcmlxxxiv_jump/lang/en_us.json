@@ -1,0 +1,19 @@
+{
+  "key.mcmlxxxiv_jump.toggle_edge_jump": "Toggle edge jump",
+  "message.mcmlxxxiv_jump.edge_jump_on": "Edge jump: on",
+  "message.mcmlxxxiv_jump.edge_jump_off": "Edge jump: off",
+  "config.mcmlxxxiv_jump.title": "MCMLXXXIV Jump",
+  "config.mcmlxxxiv_jump.category": "Edge jump",
+  "config.mcmlxxxiv_jump.enabled": "Enabled",
+  "config.mcmlxxxiv_jump.enabled.tooltip": "Jump automatically before walking off a ledge.",
+  "config.mcmlxxxiv_jump.jump_distance": "Jump distance",
+  "config.mcmlxxxiv_jump.jump_distance.value": "%s blocks",
+  "config.mcmlxxxiv_jump.jump_distance.tooltip": "How much travel is left before you would fall when the jump starts. 0 jumps at the last moment on the ground.",
+  "config.mcmlxxxiv_jump.jitter": "Jitter",
+  "config.mcmlxxxiv_jump.jitter.tooltip": "Vary the jump distance randomly, once each time you land.",
+  "config.mcmlxxxiv_jump.jitter_percent": "Jitter amount",
+  "config.mcmlxxxiv_jump.jitter_percent.value": "±%s%%",
+  "config.mcmlxxxiv_jump.jitter_percent.tooltip": "How far the jump distance can vary either way, as a percentage of it.",
+  "config.mcmlxxxiv_jump.active_while_sneaking": "Active while sneaking",
+  "config.mcmlxxxiv_jump.active_while_sneaking.tooltip": "When off, holding sneak stops edge jump."
+}

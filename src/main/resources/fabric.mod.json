@@ -15,12 +15,22 @@
   "entrypoints": {
     "client": [
       "io.dnbg.minecraft.jump.JumpClient"
+    ],
+    "modmenu": [
+      "io.dnbg.minecraft.jump.ModMenuEntry"
     ]
   },
   "depends": {
     "fabricloader": ">=0.19.3",
     "minecraft": "~26.2",
     "java": ">=25",
-    "fabric-api": ">=0.156.0"
+    "fabric-api": ">=0.156.0",
+    "cloth-config": ">=26.2.155"
+  },
+  "mixins": [
+    "mcmlxxxiv_jump.mixins.json"
+  ],
+  "suggests": {
+    "modmenu": ">=20.0.3"
   }
 }
