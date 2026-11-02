@@ -6,6 +6,7 @@ import com.google.gson.JsonParseException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +55,11 @@ public final class EdgeJumpConfig {
 	public void save(Path file) {
 		try {
 			Files.createDirectories(file.getParent());
-			Files.writeString(file, GSON.toJson(this));
+			// Written beside the target and moved over it, so an interrupted save leaves the old file
+			// rather than a truncated one that would load as the defaults.
+			Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
+			Files.writeString(temporary, GSON.toJson(this));
+			Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 		} catch (IOException e) {
 			LOGGER.warn("Could not save the edge-jump settings to {}", file, e);
 		}

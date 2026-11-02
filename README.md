@@ -7,7 +7,7 @@ Edge jump jumps for you as you walk toward a ledge, once you are within a set di
 
 A ledge is wherever sneaking would stop you: the ground ahead drops by more than a step (so walking down a slab or a stair is not a ledge). Only a ledge you can actually walk to counts. A railing, glass pane, iron bars or anything else taller than a step in your way means there is no ledge ahead, so edge jump never throws you over a barrier.
 
-Configure it from the **Mods** screen (with [Mod Menu](https://modrinth.com/mod/modmenu) installed) or in `config/mcmlxxxiv_jump.json`. The **Toggle edge jump** key (unbound by default, under Controls → Movement) turns it on and off and shows the new state on the action bar.
+The mod needs [Fabric API](https://modrinth.com/mod/fabric-api) and [Cloth Config](https://modrinth.com/mod/cloth-config). Configure it from the **Mods** screen (with [Mod Menu](https://modrinth.com/mod/modmenu) installed), or edit `config/mcmlxxxiv_jump.json` while the game is closed: the file is read at startup, and the screen and the toggle key save over it. The **Toggle edge jump** key (unbound by default, under Controls → Movement) turns it on and off and shows the new state on the action bar.
 
 | Option | Range | Default | What it does |
 |---|---|---|---|

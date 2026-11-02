@@ -45,14 +45,16 @@ public final class EdgeJump {
 		double worldX = move.x * cos - move.y * sin;
 		double worldZ = move.y * cos + move.x * sin;
 		double length = Math.sqrt(worldX * worldX + worldZ * worldZ);
+		double dirX = worldX / length;
+		double dirZ = worldZ / length;
 
-		double tickTravel = tickTravel(player, Math.min(1, length));
+		double tickTravel = tickTravel(player, dirX, dirZ, Math.min(1, length));
 		double stepHeight = player.maxUpStep();
 		PlayerInvoker ledges = (PlayerInvoker) player;
 		AABB box = player.getBoundingBox();
 		OptionalDouble remaining = LedgeProbe.remainingTravel(
-				worldX / length,
-				worldZ / length,
+				dirX,
+				dirZ,
 				LedgeProbe.lookahead(tickTravel),
 				(dx, dz) -> ledges.mcmlxxxivJump$canFallAtLeast(dx, dz, stepHeight),
 				LedgeProbe.blockedAt(
@@ -65,12 +67,14 @@ public final class EdgeJump {
 	}
 
 	/**
-	 * An upper bound on this tick's horizontal movement: the current velocity plus the input
-	 * acceleration, which is at most the movement speed scaled by the input's strength on any block
-	 * at least as slippery as ordinary ground.
+	 * An upper bound on how far this tick's movement carries the player along {@code (dirX, dirZ)}:
+	 * the current velocity's component in that direction plus the input acceleration, which is at
+	 * most the movement speed scaled by the input's strength on any block at least as slippery as
+	 * ordinary ground.
 	 */
-	private static double tickTravel(LocalPlayer player, double inputStrength) {
+	private static double tickTravel(LocalPlayer player, double dirX, double dirZ, double inputStrength) {
 		Vec3 velocity = player.getDeltaMovement();
-		return velocity.horizontalDistance() + player.getSpeed() * inputStrength * SPRINT_SPEED_MARGIN;
+		double along = Math.max(0, velocity.x * dirX + velocity.z * dirZ);
+		return along + player.getSpeed() * inputStrength * SPRINT_SPEED_MARGIN;
 	}
 }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -41,6 +42,19 @@ class EdgeJumpConfigTest {
 		assertTrue(loaded.jitter);
 		assertEquals(25, loaded.jitterPercent);
 		assertTrue(loaded.jumpWhileSneaking);
+	}
+
+	@Test
+	void savingAgainReplacesTheFileAndLeavesNothingBeside() throws IOException {
+		Path file = dir.resolve("mcmlxxxiv_jump.json");
+		EdgeJumpConfig config = new EdgeJumpConfig();
+		config.save(file);
+		config.enabled = true;
+		config.save(file);
+		assertTrue(EdgeJumpConfig.load(file).enabled);
+		try (var entries = Files.list(dir)) {
+			assertEquals(List.of(file), entries.toList());
+		}
 	}
 
 	@Test

@@ -8,7 +8,7 @@ import java.util.OptionalDouble;
  */
 public final class LedgeProbe {
 	public static final double SCAN_STEP = 0.05;
-	/** Finer than the smallest jitter swing the config allows on a non-zero distance. */
+	/** Much finer than the scan step, so a jitter swing of a few hundredths still moves the jump point. */
 	public static final double PRECISION = 0.001;
 
 	/** A test of the player's bounding box shifted horizontally by {@code (dx, dz)}. */
