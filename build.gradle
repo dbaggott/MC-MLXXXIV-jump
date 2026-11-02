@@ -45,11 +45,7 @@ loom {
 dependencies {
 	// Versions live in gradle.properties so they're easy to bump in one place.
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	// Strictly, so a dependency asking for a newer loader (Cloth Config does) can't lift the build
-	// above the floor fabric.mod.json declares.
-	implementation("net.fabricmc:fabric-loader") {
-		version { strictly project.loader_version }
-	}
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
 	// Required: the config screen is built with it. Its own Fabric API pin is excluded so the one
