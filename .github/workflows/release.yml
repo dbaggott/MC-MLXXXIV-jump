@@ -87,7 +87,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Build
-        run: ./gradlew build --stacktrace
+        # The floors build, so the published bytecode is linked against the minimums that
+        # fabric.mod.json declares rather than against newer versions players may not have.
+        run: ./gradlew build -Pfloors --stacktrace
 
       - id: jar
         name: Locate the mod jar
@@ -120,6 +122,6 @@ jobs:
           done
 
       - name: Publish to GitHub Releases
-        run: ./gradlew publishMods --stacktrace
+        run: ./gradlew publishMods -Pfloors --stacktrace
         env:
           GITHUB_TOKEN: ${{ github.token }}

@@ -21,16 +21,16 @@
     ]
   },
   "depends": {
-    "fabricloader": ">=${loader_version}",
+    "fabricloader": ">=${loader_floor}",
     "minecraft": "~${minecraft_version}",
     "java": ">=25",
-    "fabric-api": ">=${fabric_api_version}",
-    "cloth-config": ">=${cloth_config_version}"
+    "fabric-api": ">=${fabric_api_floor}",
+    "cloth-config": ">=${cloth_config_floor}"
   },
   "mixins": [
     "mcmlxxxiv_jump.mixins.json"
   ],
   "suggests": {
-    "modmenu": ">=${modmenu_version}"
+    "modmenu": ">=${modmenu_floor}"
   }
 }

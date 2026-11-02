@@ -42,21 +42,30 @@ loom {
 	}
 }
 
+// `-Pfloors` builds against fabric.mod.json's declared minimums (the `*_floor` properties) instead
+// of the toolchain versions, so each minimum is a version CI has compiled and tested against.
+def floors = providers.gradleProperty("floors").map { it != "false" }.getOrElse(false)
+def versionOf = { String name -> project.property(floors ? "${name}_floor" : "${name}_version") }
+
 dependencies {
 	// Versions live in gradle.properties so they're easy to bump in one place.
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	// Strictly, because Gradle otherwise resolves the highest loader any dependency's POM names,
+	// which can put the floors build on a newer loader than it declares.
+	implementation("net.fabricmc:fabric-loader") {
+		version { strictly versionOf("loader") }
+	}
+	implementation "net.fabricmc.fabric-api:fabric-api:${versionOf("fabric_api")}"
 
 	// Required: the config screen is built with it. Its own Fabric API pin is excluded so the one
 	// above is the only Fabric API on the classpath.
-	implementation("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
+	implementation("me.shedaniel.cloth:cloth-config-fabric:${versionOf("cloth_config")}") {
 		exclude(group: "net.fabricmc.fabric-api")
 	}
 	// Optional at runtime (`suggests` in fabric.mod.json): compiled against for the screen entry
 	// point, and loaded in the dev client so the screen can be reached there.
-	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
-	localRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+	compileOnly "com.terraformersmc:modmenu:${versionOf("modmenu")}"
+	localRuntime "com.terraformersmc:modmenu:${versionOf("modmenu")}"
 
 	testImplementation platform("org.junit:junit-bom:${project.junit_version}")
 	testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -66,15 +75,86 @@ dependencies {
 
 processResources {
 	// fabric.mod.json's version and dependency ranges come from gradle.properties, so a port to a
-	// new Minecraft line edits versions in one place. Each dependency's floor is the version the
-	// jar was built against.
-	def props = ["minecraft_version", "loader_version", "fabric_api_version", "cloth_config_version", "modmenu_version"]
+	// new Minecraft line edits versions in one place. The ranges' minimums are the `*_floor`
+	// properties, not the versions the jar is built with.
+	def props = ["minecraft_version", "loader_floor", "fabric_api_floor", "cloth_config_floor", "modmenu_floor"]
 		.collectEntries { [it, project.property(it)] } + [version: project.version]
 	inputs.properties props
 
 	filesMatching("fabric.mod.json") {
 		expand props
 	}
+}
+
+// In the floors build, loader_floor must be exactly the highest fabricloader that any required mod
+// on the runtime classpath declares, jar-in-jar mods included: lower, and the jar claims a loader
+// its dependencies refuse; higher, and it turns players away for nothing. Mods the jar only
+// `suggests` don't count, since a player without them still loads it. If the mod's own code ever
+// needs a newer loader than its dependencies do, that need belongs in this check.
+def checkLoaderFloor = tasks.register("checkLoaderFloor") {
+	def runtime = configurations.runtimeClasspath
+	def declared = project.property("loader_floor").toString()
+	def ownMeta = file("src/main/resources/fabric.mod.json")
+	inputs.files(runtime, ownMeta)
+	doLast {
+		if (!floors) {
+			throw new GradleException("checkLoaderFloor compares loader_floor with the floors build's classpath; run it with -Pfloors.")
+		}
+		def optional = (new groovy.json.JsonSlurper().parse(ownMeta).suggests ?: [:]).keySet()
+		def parse = { String v, String where ->
+			if (!(v ==~ /\d+(\.\d+)*/)) {
+				throw new GradleException("checkLoaderFloor can't compare loader version '${v}' (${where}); expected digits and dots.")
+			}
+			v.tokenize(".").collect { it as int }
+		}
+		def compare = { List<Integer> a, List<Integer> b ->
+			for (int i = 0; i < Math.max(a.size(), b.size()); i++) {
+				int d = (i < a.size() ? a[i] : 0) <=> (i < b.size() ? b[i] : 0)
+				if (d != 0) return d
+			}
+			0
+		}
+		def needs = [:]
+		// Reads one mod jar's requirement, then those of the jars nested in it.
+		def visit
+		visit = { InputStream jarStream, String where ->
+			def entries = [:]
+			new java.util.zip.ZipInputStream(jarStream).with { zip ->
+				for (def e = zip.nextEntry; e != null; e = zip.nextEntry) {
+					if (e.name == "fabric.mod.json" || (e.name.startsWith("META-INF/jars/") && e.name.endsWith(".jar"))) {
+						entries[e.name] = zip.readAllBytes()
+					}
+				}
+			}
+			def metaBytes = entries.remove("fabric.mod.json")
+			if (metaBytes == null) return
+			def meta = new groovy.json.JsonSlurper().parse(metaBytes)
+			if (meta.id in optional) return
+			def req = meta.depends?.fabricloader
+			if (req != null && req != "*") {
+				if (!(req instanceof String) || !req.startsWith(">=")) {
+					throw new GradleException("checkLoaderFloor can't read ${where}'s fabricloader requirement ${req}; expected \">=<version>\".")
+				}
+				needs[where] = req.substring(2)
+			}
+			entries.each { name, bytes -> visit(new ByteArrayInputStream(bytes), "${where}!/${name}") }
+		}
+		runtime.files.findAll { it.name.endsWith(".jar") }.each { jar -> jar.withInputStream { visit(it, jar.name) } }
+		def highest = needs.max { a, b -> compare(parse(a.value, a.key), parse(b.value, b.key)) }
+		if (highest == null) {
+			throw new GradleException("checkLoaderFloor found no fabricloader requirement on the runtime classpath.")
+		}
+		int c = compare(parse(declared, "loader_floor"), parse(highest.value, highest.key))
+		if (c < 0) {
+			throw new GradleException("loader_floor=${declared} is below ${highest.value}, which ${highest.key} requires. Raise loader_floor to ${highest.value}.")
+		}
+		if (c > 0) {
+			throw new GradleException("loader_floor=${declared} is above what anything needs: the highest requirement is ${highest.value} (${highest.key}). Lower loader_floor to ${highest.value}.")
+		}
+	}
+}
+if (floors) {
+	tasks.named("check") { dependsOn checkLoaderFloor }
 }
 
 tasks.withType(JavaCompile).configureEach {
