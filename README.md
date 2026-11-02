@@ -61,6 +61,6 @@ Merging a version bump to `main` releases it:
 2. Bump `mod_version` in `gradle.properties` in the same PR.
 3. Merge. The `release` workflow builds the jar and publishes GitHub Release `v<version>` with it.
 
-A port to a new Minecraft line is a version bump too: releases are keyed on `mod_version`, so a PR that changes only `minecraft_version` publishes nothing. Alongside the steps above, the port PR bumps the toolchain versions in `gradle.properties` and fixes whatever the new line broke in the code. `fabric.mod.json`'s dependency ranges are filled from `gradle.properties` at build time, so they need no edit.
+A port to a new Minecraft line is a version bump too: releases are keyed on `mod_version`, so a PR that changes only `minecraft_version` publishes nothing. Alongside the steps above, the port PR bumps the toolchain versions in `gradle.properties` and fixes whatever the new line broke in the code. `fabric.mod.json`'s dependency ranges are filled from the `*_floor` properties in `gradle.properties`. Those are the oldest versions the mod needs, so set each to the first build that works on the new line rather than the one you build with, and check that `./gradlew build -Pfloors` passes.
 
 If a release fails, fix the cause on `main` and retry from the Actions tab: **release** → **Run workflow** on `main`.

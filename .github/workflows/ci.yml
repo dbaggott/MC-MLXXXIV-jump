@@ -39,6 +39,26 @@ jobs:
           path: build/libs/*.jar
           if-no-files-found: error
 
+  # Rebuilds and tests against fabric.mod.json's declared minimums (the `*_floor` properties)
+  # rather than the toolchain versions, and checks loader_floor against what those builds
+  # require, so a minimum is a tested claim. Compile and unit tests only: nothing here starts the
+  # game, so a mixin target that is missing at a floor version still fails only at load.
+  floors:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - run: ./gradlew build -Pfloors --stacktrace
+
   # The single context branch protection requires. Which jobs gate a merge is then this
   # file's business rather than a Terraform change — `needs:` is the list.
   #
@@ -46,7 +66,7 @@ jobs:
   # fails, and a skipped check reports SUCCESS to branch protection.
   ci-required:
     if: always()
-    needs: [build]
+    needs: [build, floors]
     runs-on: ubuntu-latest
     permissions: {}
     steps:
