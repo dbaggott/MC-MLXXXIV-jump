@@ -44,7 +44,7 @@ loom {
 
 // `-Pfloors` builds against fabric.mod.json's declared minimums (the `*_floor` properties) instead
 // of the toolchain versions, so each minimum is a version CI has compiled and tested against.
-def floors = providers.gradleProperty("floors").isPresent()
+def floors = providers.gradleProperty("floors").map { it != "false" }.getOrElse(false)
 def versionOf = { String name -> project.property(floors ? "${name}_floor" : "${name}_version") }
 
 dependencies {
@@ -86,15 +86,21 @@ processResources {
 	}
 }
 
-// In the floors build, loader_floor must be exactly the highest fabricloader that any mod on the
-// runtime classpath declares: lower, and the jar claims a loader its dependencies refuse; higher,
-// and it turns players away for nothing. If the mod's own code ever needs a newer loader than its
-// dependencies do, that need belongs in this check.
+// In the floors build, loader_floor must be exactly the highest fabricloader that any required mod
+// on the runtime classpath declares, jar-in-jar mods included: lower, and the jar claims a loader
+// its dependencies refuse; higher, and it turns players away for nothing. Mods the jar only
+// `suggests` don't count, since a player without them still loads it. If the mod's own code ever
+// needs a newer loader than its dependencies do, that need belongs in this check.
 def checkLoaderFloor = tasks.register("checkLoaderFloor") {
 	def runtime = configurations.runtimeClasspath
 	def declared = project.property("loader_floor").toString()
-	inputs.files(runtime)
+	def ownMeta = file("src/main/resources/fabric.mod.json")
+	inputs.files(runtime, ownMeta)
 	doLast {
+		if (!floors) {
+			throw new GradleException("checkLoaderFloor compares loader_floor with the floors build's classpath; run it with -Pfloors.")
+		}
+		def optional = (new groovy.json.JsonSlurper().parse(ownMeta).suggests ?: [:]).keySet()
 		def parse = { String v, String where ->
 			if (!(v ==~ /\d+(\.\d+)*/)) {
 				throw new GradleException("checkLoaderFloor can't compare loader version '${v}' (${where}); expected digits and dots.")
@@ -109,19 +115,31 @@ def checkLoaderFloor = tasks.register("checkLoaderFloor") {
 			0
 		}
 		def needs = [:]
-		runtime.files.findAll { it.name.endsWith(".jar") }.each { jar ->
-			new java.util.zip.ZipFile(jar).withCloseable { zip ->
-				def entry = zip.getEntry("fabric.mod.json")
-				if (entry == null) return
-				def meta = new groovy.json.JsonSlurper().parse(zip.getInputStream(entry))
-				def req = meta.depends?.fabricloader
-				if (req == null || req == "*") return
-				if (!(req instanceof String) || !req.startsWith(">=")) {
-					throw new GradleException("checkLoaderFloor can't read ${jar.name}'s fabricloader requirement ${req}; expected \">=<version>\".")
+		// Reads one mod jar's requirement, then those of the jars nested in it.
+		def visit
+		visit = { InputStream jarStream, String where ->
+			def entries = [:]
+			new java.util.zip.ZipInputStream(jarStream).with { zip ->
+				for (def e = zip.nextEntry; e != null; e = zip.nextEntry) {
+					if (e.name == "fabric.mod.json" || (e.name.startsWith("META-INF/jars/") && e.name.endsWith(".jar"))) {
+						entries[e.name] = zip.readAllBytes()
+					}
 				}
-				needs[jar.name] = req.substring(2)
 			}
+			def metaBytes = entries.remove("fabric.mod.json")
+			if (metaBytes == null) return
+			def meta = new groovy.json.JsonSlurper().parse(metaBytes)
+			if (meta.id in optional) return
+			def req = meta.depends?.fabricloader
+			if (req != null && req != "*") {
+				if (!(req instanceof String) || !req.startsWith(">=")) {
+					throw new GradleException("checkLoaderFloor can't read ${where}'s fabricloader requirement ${req}; expected \">=<version>\".")
+				}
+				needs[where] = req.substring(2)
+			}
+			entries.each { name, bytes -> visit(new ByteArrayInputStream(bytes), "${where}!/${name}") }
 		}
+		runtime.files.findAll { it.name.endsWith(".jar") }.each { jar -> jar.withInputStream { visit(it, jar.name) } }
 		def highest = needs.max { a, b -> compare(parse(a.value, a.key), parse(b.value, b.key)) }
 		if (highest == null) {
 			throw new GradleException("checkLoaderFloor found no fabricloader requirement on the runtime classpath.")

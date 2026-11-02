@@ -7,6 +7,20 @@ on:
 
 jobs:
   build:
+    # The toolchain row builds what `./gradlew build` builds locally. The floors row rebuilds and
+    # tests against fabric.mod.json's declared minimums and checks loader_floor against what they
+    # require, so each minimum is a tested claim; it is also the build release.yml publishes.
+    # Compile and unit tests only: nothing here starts the game, so a mixin target missing at a
+    # floor version still fails only at load.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: toolchain
+            gradle_args: ''
+          - name: floors
+            gradle_args: '-Pfloors'
+    name: build (${{ matrix.name }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -16,6 +30,7 @@ jobs:
       # Merging a mod_version bump releases it, with this file as the release notes, so a bump
       # without one is caught here rather than by a failed release on main.
       - name: Check the changelog for mod_version exists
+        if: matrix.name == 'floors'
         run: |
           set -euo pipefail
           VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)
@@ -31,33 +46,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - run: ./gradlew build --stacktrace
+      - run: ./gradlew build ${{ matrix.gradle_args }} --stacktrace
 
-      - uses: actions/upload-artifact@v7
+      # The floors row's jar: the one a release publishes.
+      - if: matrix.name == 'floors'
+        uses: actions/upload-artifact@v7
         with:
           name: mcmlxxxiv-jump-jar
           path: build/libs/*.jar
           if-no-files-found: error
-
-  # Rebuilds and tests against fabric.mod.json's declared minimums (the `*_floor` properties)
-  # rather than the toolchain versions, and checks loader_floor against what those builds
-  # require, so a minimum is a tested claim. Compile and unit tests only: nothing here starts the
-  # game, so a mixin target that is missing at a floor version still fails only at load.
-  floors:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - uses: gradle/actions/setup-gradle@v6
-
-      - run: ./gradlew build -Pfloors --stacktrace
 
   # The single context branch protection requires. Which jobs gate a merge is then this
   # file's business rather than a Terraform change — `needs:` is the list.
@@ -66,7 +63,7 @@ jobs:
   # fails, and a skipped check reports SUCCESS to branch protection.
   ci-required:
     if: always()
-    needs: [build, floors]
+    needs: [build]
     runs-on: ubuntu-latest
     permissions: {}
     steps:
