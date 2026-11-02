@@ -12,12 +12,12 @@ Configure it from the **Mods** screen (with [Mod Menu](https://modrinth.com/mod/
 | Option | Range | Default | What it does |
 |---|---|---|---|
 | Enabled | on / off | off | Turns edge jump on. Installing the mod changes nothing until you do. |
-| Jump distance | 0.00–1.00 blocks | 0.10 | How far before the ledge the jump starts. |
-| Jitter | on / off | off | Varies the jump distance randomly. |
-| Jitter amount | 0–50 % | 10 | How far the distance can vary either way. |
-| Active while sneaking | on / off | off | When off, holding sneak turns edge jump off. When on, sneaking toward a ledge jumps too. |
+| Edge distance | 0.00–1.00 blocks | 0.10 | Distance from the edge at which the jump is triggered. |
+| Jitter | on / off | off | Randomly varies the distance from the edge at which the jump is triggered. |
+| Jitter amount | 0–50 % | 10 | When jitter is on, how far the distance can vary either way, as a percentage of the edge distance. |
+| Auto-jump while sneaking | on / off | off | When off, holding sneak turns edge jump off. When on, sneaking toward a ledge jumps too. |
 
-**How distance is measured.** The jump distance is the travel you have left, in the direction you are moving, before you would start to fall. At 0 the jump comes on your last moment on the ground. Walking along a ledge rather than toward it never triggers a jump. When you move faster than the distance allows for, as sprinting at a small distance does, the jump comes on the last tick you are still on the ground instead, so you never walk off.
+**How distance is measured.** The edge distance is the travel you have left, in the direction you are moving, before you would start to fall. At 0 the jump comes on your last moment on the ground. Walking along a ledge rather than toward it never triggers a jump. When you move faster than the distance allows for, as sprinting at a small distance does, the jump comes on the last tick you are still on the ground instead, so you never walk off.
 
 **How jitter is applied.** With jitter at *p* %, each jump uses a distance picked uniformly between (1 − *p*/100) and (1 + *p*/100) times the setting: at 10 %, a 0.20 setting jumps somewhere between 0.18 and 0.22. A new distance is picked each time you land, and when you change the settings, so it holds steady while you walk up to a ledge.
 

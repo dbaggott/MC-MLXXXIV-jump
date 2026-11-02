@@ -35,7 +35,7 @@ class EdgeJumpDecisionTest {
 	}
 
 	@Test
-	void sneakingSuppressesItUnlessActiveWhileSneaking() {
+	void sneakingSuppressesItUnlessJumpWhileSneaking() {
 		assertFalse(EdgeJumpDecision.shouldJump(true, true, false, OptionalDouble.of(0), 0.0, 0.5));
 		assertTrue(EdgeJumpDecision.shouldJump(true, true, true, OptionalDouble.of(0.4), 0.0, 0.5));
 	}

@@ -21,7 +21,7 @@ public final class EdgeJump {
 	private final JitteredThreshold threshold = new JitteredThreshold(RandomGenerator.getDefault());
 
 	public void afterInputTick(LocalPlayer player, ClientInput input, EdgeJumpConfig config) {
-		double t = threshold.threshold(config.jumpDistance, config.jitter, config.jitterPercent, player.onGround());
+		double t = threshold.threshold(config.edgeDistance, config.jitter, config.jitterPercent, player.onGround());
 		if (!config.enabled) {
 			return;
 		}
@@ -59,7 +59,7 @@ public final class EdgeJump {
 						(dx, dy, dz) -> !player.level().noCollision(player, box.move(dx, dy, dz)), stepHeight));
 
 		boolean sneaking = input.keyPresses.shift();
-		if (EdgeJumpDecision.shouldJump(true, sneaking, config.activeWhileSneaking, remaining, tickTravel, t)) {
+		if (EdgeJumpDecision.shouldJump(true, sneaking, config.jumpWhileSneaking, remaining, tickTravel, t)) {
 			input.makeJump();
 		}
 	}

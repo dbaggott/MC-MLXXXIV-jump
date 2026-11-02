@@ -12,16 +12,16 @@ public final class EdgeJumpDecision {
 	/**
 	 * @param remaining the travel left before falling, or empty when there is no reachable ledge
 	 * @param tickTravel an upper bound on how far this tick's movement carries the player
-	 * @param threshold the effective jump distance
+	 * @param threshold the effective edge distance
 	 */
 	public static boolean shouldJump(
 			boolean eligible,
 			boolean sneaking,
-			boolean activeWhileSneaking,
+			boolean jumpWhileSneaking,
 			OptionalDouble remaining,
 			double tickTravel,
 			double threshold) {
-		if (!eligible || remaining.isEmpty() || (sneaking && !activeWhileSneaking)) {
+		if (!eligible || remaining.isEmpty() || (sneaking && !jumpWhileSneaking)) {
 			return false;
 		}
 		double effective = sneaking ? Math.max(threshold, SNEAK_BACK_OFF_STEP) : threshold;

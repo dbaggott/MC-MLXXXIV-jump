@@ -38,7 +38,7 @@ public final class LedgeProbe {
 	 * movement can cover, so the D4 carry-past case always sees the ledge it would carry over.
 	 */
 	public static double lookahead(double tickTravel) {
-		return EdgeJumpConfig.MAX_JUMP_DISTANCE * (1 + EdgeJumpConfig.MAX_JITTER_PERCENT / 100.0)
+		return EdgeJumpConfig.MAX_EDGE_DISTANCE * (1 + EdgeJumpConfig.MAX_JITTER_PERCENT / 100.0)
 				+ tickTravel + SCAN_STEP;
 	}
 

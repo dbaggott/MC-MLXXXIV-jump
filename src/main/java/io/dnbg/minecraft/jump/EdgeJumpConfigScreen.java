@@ -10,9 +10,13 @@ import net.minecraft.network.chat.Component;
 /**
  * The Cloth Config screen for {@link EdgeJumpConfig}. Built by hand rather than with AutoConfig,
  * whose sliders are integer-only: the distance is edited here in hundredths and stored in blocks.
+ *
+ * <p>Options are explained by a line of text under their control rather than by a hover tooltip,
+ * which Cloth draws over the rows beneath the cursor.
  */
 public final class EdgeJumpConfigScreen {
 	private static final String KEY = "config." + JumpClient.MOD_ID + ".";
+	private static final int DESCRIPTION_COLOR = 0xFFAAAAAA;
 
 	private EdgeJumpConfigScreen() {}
 
@@ -27,26 +31,27 @@ public final class EdgeJumpConfigScreen {
 
 		category.addEntry(entries.startBooleanToggle(Component.translatable(KEY + "enabled"), config.enabled)
 				.setDefaultValue(EdgeJumpConfig.DEFAULT_ENABLED)
-				.setTooltip(Component.translatable(KEY + "enabled.tooltip"))
 				.setSaveConsumer(value -> config.enabled = value)
 				.build());
-		int maxHundredths = (int) Math.round(EdgeJumpConfig.MAX_JUMP_DISTANCE * 100);
+
 		category.addEntry(entries.startIntSlider(
-						Component.translatable(KEY + "jump_distance"),
-						(int) Math.round(config.jumpDistance * 100),
+						Component.translatable(KEY + "edge_distance"),
+						(int) Math.round(config.edgeDistance * 100),
 						0,
-						maxHundredths)
-				.setDefaultValue((int) Math.round(EdgeJumpConfig.DEFAULT_JUMP_DISTANCE * 100))
+						(int) Math.round(EdgeJumpConfig.MAX_EDGE_DISTANCE * 100))
+				.setDefaultValue((int) Math.round(EdgeJumpConfig.DEFAULT_EDGE_DISTANCE * 100))
 				.setTextGetter(hundredths -> Component.translatable(
-						KEY + "jump_distance.value", String.format(Locale.ROOT, "%.2f", hundredths / 100.0)))
-				.setTooltip(Component.translatable(KEY + "jump_distance.tooltip"))
-				.setSaveConsumer(hundredths -> config.jumpDistance = hundredths / 100.0)
+						KEY + "edge_distance.value", String.format(Locale.ROOT, "%.2f", hundredths / 100.0)))
+				.setSaveConsumer(hundredths -> config.edgeDistance = hundredths / 100.0)
 				.build());
+		addDescription(category, entries, "edge_distance");
+
 		category.addEntry(entries.startBooleanToggle(Component.translatable(KEY + "jitter"), config.jitter)
 				.setDefaultValue(EdgeJumpConfig.DEFAULT_JITTER)
-				.setTooltip(Component.translatable(KEY + "jitter.tooltip"))
 				.setSaveConsumer(value -> config.jitter = value)
 				.build());
+		addDescription(category, entries, "jitter");
+
 		category.addEntry(entries.startIntSlider(
 						Component.translatable(KEY + "jitter_percent"),
 						config.jitterPercent,
@@ -54,15 +59,21 @@ public final class EdgeJumpConfigScreen {
 						EdgeJumpConfig.MAX_JITTER_PERCENT)
 				.setDefaultValue(EdgeJumpConfig.DEFAULT_JITTER_PERCENT)
 				.setTextGetter(percent -> Component.translatable(KEY + "jitter_percent.value", percent))
-				.setTooltip(Component.translatable(KEY + "jitter_percent.tooltip"))
 				.setSaveConsumer(value -> config.jitterPercent = value)
 				.build());
+		addDescription(category, entries, "jitter_percent");
+
 		category.addEntry(entries.startBooleanToggle(
-						Component.translatable(KEY + "active_while_sneaking"), config.activeWhileSneaking)
-				.setDefaultValue(EdgeJumpConfig.DEFAULT_ACTIVE_WHILE_SNEAKING)
-				.setTooltip(Component.translatable(KEY + "active_while_sneaking.tooltip"))
-				.setSaveConsumer(value -> config.activeWhileSneaking = value)
+						Component.translatable(KEY + "jump_while_sneaking"), config.jumpWhileSneaking)
+				.setDefaultValue(EdgeJumpConfig.DEFAULT_JUMP_WHILE_SNEAKING)
+				.setSaveConsumer(value -> config.jumpWhileSneaking = value)
 				.build());
 		return builder.build();
+	}
+
+	private static void addDescription(ConfigCategory category, ConfigEntryBuilder entries, String option) {
+		category.addEntry(entries.startTextDescription(Component.translatable(KEY + option + ".description"))
+				.setColor(DESCRIPTION_COLOR)
+				.build());
 	}
 }

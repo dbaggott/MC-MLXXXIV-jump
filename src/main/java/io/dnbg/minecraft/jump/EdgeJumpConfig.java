@@ -11,24 +11,24 @@ import org.slf4j.LoggerFactory;
 
 /** The edge-jump options, persisted as JSON. */
 public final class EdgeJumpConfig {
-	public static final double MAX_JUMP_DISTANCE = 1.0;
+	public static final double MAX_EDGE_DISTANCE = 1.0;
 	public static final int MAX_JITTER_PERCENT = 50;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(JumpClient.MOD_ID);
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	public static final boolean DEFAULT_ENABLED = false;
-	public static final double DEFAULT_JUMP_DISTANCE = 0.10;
+	public static final double DEFAULT_EDGE_DISTANCE = 0.10;
 	public static final boolean DEFAULT_JITTER = false;
 	public static final int DEFAULT_JITTER_PERCENT = 10;
-	public static final boolean DEFAULT_ACTIVE_WHILE_SNEAKING = false;
+	public static final boolean DEFAULT_JUMP_WHILE_SNEAKING = false;
 
 	public boolean enabled = DEFAULT_ENABLED;
 	/** Blocks of travel left before the ledge at which to jump, in steps of 0.01. */
-	public double jumpDistance = DEFAULT_JUMP_DISTANCE;
+	public double edgeDistance = DEFAULT_EDGE_DISTANCE;
 	public boolean jitter = DEFAULT_JITTER;
 	public int jitterPercent = DEFAULT_JITTER_PERCENT;
-	public boolean activeWhileSneaking = DEFAULT_ACTIVE_WHILE_SNEAKING;
+	public boolean jumpWhileSneaking = DEFAULT_JUMP_WHILE_SNEAKING;
 
 	/**
 	 * Reads the file, or returns the defaults when it is missing or unreadable. Out-of-range values
@@ -61,10 +61,10 @@ public final class EdgeJumpConfig {
 	}
 
 	private void clamp() {
-		if (Double.isNaN(jumpDistance)) {
-			jumpDistance = DEFAULT_JUMP_DISTANCE;
+		if (Double.isNaN(edgeDistance)) {
+			edgeDistance = DEFAULT_EDGE_DISTANCE;
 		}
-		jumpDistance = Math.round(Math.clamp(jumpDistance, 0, MAX_JUMP_DISTANCE) * 100) / 100.0;
+		edgeDistance = Math.round(Math.clamp(edgeDistance, 0, MAX_EDGE_DISTANCE) * 100) / 100.0;
 		jitterPercent = Math.clamp(jitterPercent, 0, MAX_JITTER_PERCENT);
 	}
 }

@@ -18,10 +18,10 @@ class EdgeJumpConfigTest {
 	void aMissingFileGivesTheDefaults() {
 		EdgeJumpConfig config = EdgeJumpConfig.load(dir.resolve("mcmlxxxiv_jump.json"));
 		assertFalse(config.enabled);
-		assertEquals(0.10, config.jumpDistance);
+		assertEquals(0.10, config.edgeDistance);
 		assertFalse(config.jitter);
 		assertEquals(10, config.jitterPercent);
-		assertFalse(config.activeWhileSneaking);
+		assertFalse(config.jumpWhileSneaking);
 	}
 
 	@Test
@@ -29,26 +29,26 @@ class EdgeJumpConfigTest {
 		Path file = dir.resolve("config/mcmlxxxiv_jump.json");
 		EdgeJumpConfig saved = new EdgeJumpConfig();
 		saved.enabled = true;
-		saved.jumpDistance = 0.37;
+		saved.edgeDistance = 0.37;
 		saved.jitter = true;
 		saved.jitterPercent = 25;
-		saved.activeWhileSneaking = true;
+		saved.jumpWhileSneaking = true;
 		saved.save(file);
 
 		EdgeJumpConfig loaded = EdgeJumpConfig.load(file);
 		assertTrue(loaded.enabled);
-		assertEquals(0.37, loaded.jumpDistance);
+		assertEquals(0.37, loaded.edgeDistance);
 		assertTrue(loaded.jitter);
 		assertEquals(25, loaded.jitterPercent);
-		assertTrue(loaded.activeWhileSneaking);
+		assertTrue(loaded.jumpWhileSneaking);
 	}
 
 	@Test
 	void handEditedValuesArePulledIntoRange() throws IOException {
 		Path file = dir.resolve("mcmlxxxiv_jump.json");
-		Files.writeString(file, "{\"jumpDistance\": 3.0, \"jitterPercent\": -5}");
+		Files.writeString(file, "{\"edgeDistance\": 3.0, \"jitterPercent\": -5}");
 		EdgeJumpConfig config = EdgeJumpConfig.load(file);
-		assertEquals(1.0, config.jumpDistance);
+		assertEquals(1.0, config.edgeDistance);
 		assertEquals(0, config.jitterPercent);
 	}
 
@@ -56,6 +56,6 @@ class EdgeJumpConfigTest {
 	void anUnreadableFileGivesTheDefaults() throws IOException {
 		Path file = dir.resolve("mcmlxxxiv_jump.json");
 		Files.writeString(file, "{not json");
-		assertEquals(0.10, EdgeJumpConfig.load(file).jumpDistance);
+		assertEquals(0.10, EdgeJumpConfig.load(file).edgeDistance);
 	}
 }

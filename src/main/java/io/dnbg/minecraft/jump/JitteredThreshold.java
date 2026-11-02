@@ -3,7 +3,7 @@ package io.dnbg.minecraft.jump;
 import java.util.random.RandomGenerator;
 
 /**
- * The effective jump distance of D3: the configured distance scaled by a random factor that is drawn
+ * The effective edge distance of D3: the configured distance scaled by a random factor that is drawn
  * once per ground contact, and again whenever the settings change.
  */
 public final class JitteredThreshold {
