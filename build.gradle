@@ -16,7 +16,7 @@ repositories {
 loom {
 	// Where the dev client keeps its world, options and mods.
 	//
-	// Defaults to `run/` inside whichever directory Gradle was invoked from, which means a
+	// Defaults to `run/` inside the project directory, which means a
 	// worktree gets its own empty world and its own keybinds — fine for a throwaway test, useless
 	// for playing the mod. Setting `jump_run_dir` to an absolute path in
 	// ~/.gradle/gradle.properties points every worktree on that machine at one shared directory.

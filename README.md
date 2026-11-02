@@ -12,7 +12,7 @@ Requires Java 25 (`mise install` picks it up from `mise.toml`).
 
 ### `jump_run_dir`
 
-By default the dev client keeps its world, options and keybinds in `run/` under the directory Gradle was run from, so each worktree starts empty. To share one run directory across every checkout on a machine, set an absolute path in `~/.gradle/gradle.properties`:
+By default the dev client keeps its world, options and keybinds in `run/` inside the checkout, so each worktree starts empty. To share one run directory across every checkout on a machine, set an absolute path in `~/.gradle/gradle.properties`:
 
 ```properties
 jump_run_dir=/Users/you/mcmlxxxiv-jump-run
