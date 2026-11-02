@@ -45,27 +45,27 @@ loom {
 // `-Pfloors` builds against fabric.mod.json's declared minimums (the `*_floor` properties) instead
 // of the toolchain versions, so each minimum is a version CI has compiled and tested against.
 def floors = providers.gradleProperty("floors").isPresent()
-def dep = { String name -> project.property(floors ? "${name}_floor" : "${name}_version") }
+def versionOf = { String name -> project.property(floors ? "${name}_floor" : "${name}_version") }
 
 dependencies {
 	// Versions live in gradle.properties so they're easy to bump in one place.
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	// Strictly, because Gradle otherwise resolves the highest loader any dependency's POM names
-	// (Cloth Config's does), which would put the floors build on a newer loader than it declares.
+	// Strictly, because Gradle otherwise resolves the highest loader any dependency's POM names,
+	// which can put the floors build on a newer loader than it declares.
 	implementation("net.fabricmc:fabric-loader") {
-		version { strictly dep("loader") }
+		version { strictly versionOf("loader") }
 	}
-	implementation "net.fabricmc.fabric-api:fabric-api:${dep("fabric_api")}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${versionOf("fabric_api")}"
 
 	// Required: the config screen is built with it. Its own Fabric API pin is excluded so the one
 	// above is the only Fabric API on the classpath.
-	implementation("me.shedaniel.cloth:cloth-config-fabric:${dep("cloth_config")}") {
+	implementation("me.shedaniel.cloth:cloth-config-fabric:${versionOf("cloth_config")}") {
 		exclude(group: "net.fabricmc.fabric-api")
 	}
 	// Optional at runtime (`suggests` in fabric.mod.json): compiled against for the screen entry
 	// point, and loaded in the dev client so the screen can be reached there.
-	compileOnly "com.terraformersmc:modmenu:${dep("modmenu")}"
-	localRuntime "com.terraformersmc:modmenu:${dep("modmenu")}"
+	compileOnly "com.terraformersmc:modmenu:${versionOf("modmenu")}"
+	localRuntime "com.terraformersmc:modmenu:${versionOf("modmenu")}"
 
 	testImplementation platform("org.junit:junit-bom:${project.junit_version}")
 	testImplementation 'org.junit.jupiter:junit-jupiter'
