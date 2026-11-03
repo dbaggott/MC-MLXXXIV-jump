@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
 import java.util.OptionalDouble;
 import org.junit.jupiter.api.Test;
 
@@ -22,9 +23,12 @@ class LedgeProbeTest {
 	}
 
 	private static OptionalDouble probe(double dirX, double dirZ, Terrain terrain) {
+		return probe(Optional.of(new ProbeDirection(dirX, dirZ)), terrain);
+	}
+
+	private static OptionalDouble probe(Optional<ProbeDirection> direction, Terrain terrain) {
 		return LedgeProbe.remainingTravel(
-				dirX,
-				dirZ,
+				direction,
 				(dx, dy, dz) -> terrain.topAt(dx, dz) < dy - STEP_HEIGHT,
 				(dx, dy, dz) -> dy < terrain.topAt(dx, dz),
 				STEP_HEIGHT);
@@ -99,5 +103,11 @@ class LedgeProbeTest {
 	void aDropOfMoreThanAStepWithNoStepBeforeItIsALedge() {
 		Terrain drop = (dx, dz) -> dx > 0.3 ? -0.7 : 0;
 		assertEquals(0.3, probeAlongX(drop).getAsDouble(), LedgeProbe.PRECISION);
+	}
+
+	@Test
+	void withNoDirectionOnlyThePlayersOwnPositionCounts() {
+		assertEquals(OptionalDouble.of(0), probe(Optional.empty(), (dx, dz) -> VOID));
+		assertFalse(probe(Optional.empty(), fallsBeyond(0.01)).isPresent());
 	}
 }

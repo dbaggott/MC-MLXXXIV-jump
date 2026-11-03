@@ -1,5 +1,6 @@
 package io.dnbg.minecraft.jump;
 
+import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
@@ -27,16 +28,19 @@ public final class LedgeProbe {
 	private LedgeProbe() {}
 
 	/**
-	 * The remaining travel along the unit direction {@code (dirX, dirZ)}, or empty when there is no
-	 * ledge within {@link #LOOKAHEAD}, or an obstruction comes before it.
+	 * The remaining travel along {@code direction}, or empty when there is no ledge within
+	 * {@link #LOOKAHEAD}, or an obstruction comes before it.
 	 *
-	 * <p>The result never overstates the travel: it is the last offset found supported.
+	 * <p>The result never overstates the travel: it is the last offset found supported. With no
+	 * direction only the player's own position is tested, which is all the hang tick (D8) needs.
 	 *
 	 * @param canFallAt whether nothing lies within {@code stepHeight} below the shifted box
 	 * @param collidesAt whether the shifted box collides with anything
 	 */
 	public static OptionalDouble remainingTravel(
-			double dirX, double dirZ, BoxTest canFallAt, BoxTest collidesAt, double stepHeight) {
+			Optional<ProbeDirection> direction, BoxTest canFallAt, BoxTest collidesAt, double stepHeight) {
+		double dirX = direction.map(ProbeDirection::x).orElse(0.0);
+		double dirZ = direction.map(ProbeDirection::z).orElse(0.0);
 		double supported = 0;
 		double dy = 0;
 		for (int i = 0; ; i++) {
@@ -65,7 +69,7 @@ public final class LedgeProbe {
 			}
 			dy -= floorDrop(dx, dy, dz, collidesAt, stepHeight);
 			supported = s;
-			if (s >= LOOKAHEAD) {
+			if (direction.isEmpty() || s >= LOOKAHEAD) {
 				return OptionalDouble.empty();
 			}
 		}

@@ -1,7 +1,6 @@
 package io.dnbg.minecraft.jump;
 
 import io.dnbg.minecraft.jump.mixin.PlayerInvoker;
-import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.random.RandomGenerator;
 import net.minecraft.client.player.ClientInput;
@@ -36,20 +35,13 @@ public final class EdgeJump {
 
 		double stepHeight = player.maxUpStep();
 		AABB box = player.getBoundingBox();
-		LedgeProbe.BoxTest canFallAt = (dx, dy, dz) -> canFallAt(player, box, dx, dy, dz, stepHeight);
 		Vec3 velocity = player.getDeltaMovement();
 		Vec2 move = input.getMoveVector();
-		Optional<ProbeDirection> direction = ProbeDirection.of(velocity.x, velocity.z, move.x, move.y, player.getYRot());
-		// With no direction there is nothing to look ahead along, but the fall test at the player's
-		// own position needs none, so the hang tick of a slide that has all but stopped still jumps.
-		OptionalDouble remaining = direction.isPresent()
-				? LedgeProbe.remainingTravel(
-						direction.get().x(),
-						direction.get().z(),
-						canFallAt,
-						(dx, dy, dz) -> !player.level().noCollision(player, box.move(dx, dy, dz)),
-						stepHeight)
-				: canFallAt.test(0, 0, 0) ? OptionalDouble.of(0) : OptionalDouble.empty();
+		OptionalDouble remaining = LedgeProbe.remainingTravel(
+				ProbeDirection.of(velocity.x, velocity.z, move.x, move.y, player.getYRot()),
+				(dx, dy, dz) -> canFallAt(player, box, dx, dy, dz, stepHeight),
+				(dx, dy, dz) -> !player.level().noCollision(player, box.move(dx, dy, dz)),
+				stepHeight);
 
 		boolean sneaking = input.keyPresses.shift();
 		if (EdgeJumpDecision.shouldJump(true, sneaking, config.jumpWhileSneaking, remaining, t)) {
