@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "mcmlxxxiv_jump",
   "version": "${version}",
-  "name": "MCMLXXXIV Jump",
+  "name": "Auto-jump",
   "description": "Go ahead and jump!  Minecraft Fabric mod adding configurable auto-jumping capabilities.",
   "authors": [
     "dbaggott"

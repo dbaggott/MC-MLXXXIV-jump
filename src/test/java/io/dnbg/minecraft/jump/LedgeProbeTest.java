@@ -4,21 +4,48 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
 import java.util.OptionalDouble;
 import org.junit.jupiter.api.Test;
 
 class LedgeProbeTest {
-	private static final double LOOKAHEAD = LedgeProbe.lookahead(0.3);
-	private static final LedgeProbe.OffsetTest NEVER = (dx, dz) -> false;
+	private static final double STEP_HEIGHT = 0.6;
+	/** Far enough below that nothing within a step of the player is ground. */
+	private static final double VOID = -10;
 
-	/** A ledge straight ahead along +x, falling once the offset passes {@code edge}. */
-	private static LedgeProbe.OffsetTest fallsBeyond(double edge) {
-		return (dx, dz) -> dx > edge;
+	/**
+	 * The height of the highest surface under the player's footprint shifted by {@code (dx, dz)},
+	 * relative to where the player stands now. Everything below it is solid.
+	 */
+	@FunctionalInterface
+	private interface Terrain {
+		double topAt(double dx, double dz);
+	}
+
+	private static OptionalDouble probe(double dirX, double dirZ, Terrain terrain) {
+		return probe(Optional.of(new ProbeDirection(dirX, dirZ)), terrain);
+	}
+
+	private static OptionalDouble probe(Optional<ProbeDirection> direction, Terrain terrain) {
+		return LedgeProbe.remainingTravel(
+				direction,
+				(dx, dy, dz) -> terrain.topAt(dx, dz) < dy - STEP_HEIGHT,
+				(dx, dy, dz) -> dy < terrain.topAt(dx, dz),
+				STEP_HEIGHT);
+	}
+
+	private static OptionalDouble probeAlongX(Terrain terrain) {
+		return probe(1, 0, terrain);
+	}
+
+	/** Level ground straight ahead along +x, falling away once the offset passes {@code edge}. */
+	private static Terrain fallsBeyond(double edge) {
+		return (dx, dz) -> dx > edge ? VOID : 0;
 	}
 
 	@Test
 	void findsTheLedgeToWithinThePrecision() {
-		OptionalDouble remaining = LedgeProbe.remainingTravel(1, 0, LOOKAHEAD, fallsBeyond(0.37), NEVER);
+		OptionalDouble remaining = probeAlongX(fallsBeyond(0.37));
 		assertTrue(remaining.isPresent());
 		assertEquals(0.37, remaining.getAsDouble(), LedgeProbe.PRECISION);
 		assertTrue(remaining.getAsDouble() <= 0.37, "the result never overstates the travel left");
@@ -27,41 +54,60 @@ class LedgeProbeTest {
 	@Test
 	void followsTheDirectionGiven() {
 		double diagonal = Math.sqrt(0.5);
-		OptionalDouble remaining = LedgeProbe.remainingTravel(
-				diagonal, -diagonal, LOOKAHEAD, (dx, dz) -> Math.hypot(dx, dz) > 0.6 && dz < 0, NEVER);
+		OptionalDouble remaining =
+				probe(diagonal, -diagonal, (dx, dz) -> Math.hypot(dx, dz) > 0.6 && dz < 0 ? VOID : 0);
 		assertEquals(0.6, remaining.getAsDouble(), LedgeProbe.PRECISION);
 	}
 
 	@Test
 	void reportsNoLedgeWhenNoneIsWithinTheLookahead() {
-		assertFalse(LedgeProbe.remainingTravel(1, 0, LOOKAHEAD, fallsBeyond(LOOKAHEAD + 0.01), NEVER).isPresent());
+		assertFalse(probeAlongX(fallsBeyond(LedgeProbe.LOOKAHEAD + 0.01)).isPresent());
 	}
 
 	@Test
 	void reportsZeroWhenAlreadyAtTheEdge() {
-		assertEquals(OptionalDouble.of(0), LedgeProbe.remainingTravel(1, 0, LOOKAHEAD, (dx, dz) -> true, NEVER));
+		assertEquals(OptionalDouble.of(0), probeAlongX((dx, dz) -> VOID));
 	}
 
 	@Test
 	void reportsNoLedgeWhenAnObstructionComesFirst() {
-		LedgeProbe.OffsetTest blockedFrom020 = (dx, dz) -> dx >= 0.20;
-		assertFalse(LedgeProbe.remainingTravel(1, 0, LOOKAHEAD, fallsBeyond(0.50), blockedFrom020).isPresent());
+		Terrain wallFrom020 = (dx, dz) -> dx >= 0.20 ? 10 : fallsBeyond(0.50).topAt(dx, dz);
+		assertFalse(probeAlongX(wallFrom020).isPresent());
 	}
 
 	@Test
 	void aBumpNoHigherThanAStepDoesNotStopTheScan() {
-		double stepHeight = 0.6;
-		// A slab-high bump from 0.20 to 0.30: colliding at the current height, clear when raised.
-		LedgeProbe.Collision slabBump = (dx, dy, dz) -> dx >= 0.20 && dx <= 0.30 && dy < 0.5;
-		OptionalDouble remaining = LedgeProbe.remainingTravel(
-				1, 0, LOOKAHEAD, fallsBeyond(0.50), LedgeProbe.blockedAt(slabBump, stepHeight));
-		assertEquals(0.50, remaining.getAsDouble(), LedgeProbe.PRECISION);
+		Terrain slabBump = (dx, dz) -> dx >= 0.20 && dx <= 0.30 ? 0.5 : fallsBeyond(0.50).topAt(dx, dz);
+		assertEquals(0.50, probeAlongX(slabBump).getAsDouble(), LedgeProbe.PRECISION);
 	}
 
 	@Test
 	void anObstructionTallerThanAStepBlocks() {
-		LedgeProbe.Collision railing = (dx, dy, dz) -> dx >= 0.20 && dy < 1.0;
-		assertFalse(LedgeProbe.remainingTravel(1, 0, LOOKAHEAD, fallsBeyond(0.50), LedgeProbe.blockedAt(railing, 0.6))
-				.isPresent());
+		Terrain railing = (dx, dz) -> dx >= 0.20 ? 1.0 : 0;
+		assertFalse(probeAlongX(railing).isPresent());
+	}
+
+	@Test
+	void aDescendingStaircaseIsNotALedge() {
+		Terrain stairs = (dx, dz) -> -0.5 * Math.floor(dx / 0.5);
+		assertFalse(probeAlongX(stairs).isPresent());
+	}
+
+	@Test
+	void aDropBeyondAStepDownIsMeasuredFromTheLowerStep() {
+		Terrain stepThenDrop = (dx, dz) -> dx > 1.3 ? VOID : dx > 0.3 ? -0.5 : 0;
+		assertEquals(1.3, probeAlongX(stepThenDrop).getAsDouble(), LedgeProbe.PRECISION);
+	}
+
+	@Test
+	void aDropOfMoreThanAStepWithNoStepBeforeItIsALedge() {
+		Terrain drop = (dx, dz) -> dx > 0.3 ? -0.7 : 0;
+		assertEquals(0.3, probeAlongX(drop).getAsDouble(), LedgeProbe.PRECISION);
+	}
+
+	@Test
+	void withNoDirectionOnlyThePlayersOwnPositionCounts() {
+		assertEquals(OptionalDouble.of(0), probe(Optional.empty(), (dx, dz) -> VOID));
+		assertFalse(probe(Optional.empty(), fallsBeyond(0.01)).isPresent());
 	}
 }
